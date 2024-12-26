@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Личный кабинет клиента</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Банк Оли</h1>
+    </header>
+    <div class="container">
+        <div class="client-info">
+            <h2>Личный кабинет клиента</h2>
+            <p>Имя: {{ account_info.name }}</p>
+            <p>Телефон: {{ account_info.phone }}</p>
+            <p>Счет: {{ account_info.account }}</p>
+            <p>Баланс: {{ account_info.balance }}</p>
+        </div>
+        <div class="transfer-form">
+            <h3>Перевод денег</h3>
+            <form onsubmit="transferMoney(); return false;">
+                <label for="transfer_type">Способ перевода:</label>
+                <select id="transfer_type" onchange="toggleTransferFields()">
+                    <option value="account">По номеру счета</option>
+                    <option value="phone">По номеру телефона</option>
+                </select><br>
+                <div id="account_field">
+                    <label for="recipient_account">Счет получателя:</label>
+                    <input type="text" id="recipient_account"><br>
+                </div>
+                <div id="phone_field" style="display: none;">
+                    <label for="recipient_phone">Телефон получателя:</label>
+                    <input type="text" id="recipient_phone"><br>
+                </div>
+                <label for="amount">Сумма:</label>
+                <input type="number" id="amount" required><br>
+                <input type="submit" value="Перевести">
+            </form>
+        </div>
+        <a href="{{ url_for('transactions') }}">История транзакций</a><br>
+        <a href="{{ url_for('logout') }}">Выход</a>
+    </div>
+    <footer>
+        ООО "Банк Оли". Лицензия №1234567890. Все права защищены.
+    </footer>
+    <!-- Скрипт для переключения полей ввода -->
+    <script>
+        function toggleTransferFields() {
+            const transferType = document.getElementById('transfer_type').value;
+            const accountField = document.getElementById('account_field');
+            const phoneField = document.getElementById('phone_field');
+            if (transferType === 'account') {
+                accountField.style.display = 'block';
+                phoneField.style.display = 'none';
+            } else {
+                accountField.style.display = 'none';
+                phoneField.style.display = 'block';
+            }
+        }
+    </script>
+    <!-- Скрипт для выполнения перевода денег -->
+    <script>
+        function transferMoney() {
+            const transferType = document.getElementById('transfer_type').value;
+            const recipientAccount = document.getElementById('recipient_account').value;
+            const recipientPhone = document.getElementById('recipient_phone').value;
+            const amount = parseInt(document.getElementById('amount').value);
+
+            let params = {
+                'sender_id': {{ current_user.id }},
+                'amount': amount
+            };
+
+            if (transferType === 'account') {
+                params['recipient_account'] = recipientAccount;
+            } else {
+                params['recipient_phone'] = recipientPhone;
+            }
+
+            fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'jsonrpc': '2.0',
+                    'method': 'transfer_money',
+                    'params': params,
+                    'id': 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result) {
+                    alert('Перевод выполнен успешно');
+                } else {
+                    alert('Ошибка при переводе');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

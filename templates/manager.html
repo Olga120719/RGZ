@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Личный кабинет менеджера</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Банк Оли</h1>
+    </header>
+    <div class="container">
+        <div class="manager-container">
+            <div class="manager-form">
+                <h2>Создание пользователя</h2>
+                <form onsubmit="createUser(); return false;">
+                    <label for="name">Имя:</label>
+                    <input type="text" id="name" required><br>
+                    <label for="login">Логин:</label>
+                    <input type="text" id="login" required><br>
+                    <label for="password">Пароль:</label>
+                    <input type="password" id="password" required><br>
+                    <label for="phone">Телефон:</label>
+                    <input type="text" id="phone"><br>
+                    <label for="balance">Баланс:</label>
+                    <input type="number" id="balance" value="0">
+                    <button type="button" onclick="setFixedBalance()">Фиксированный баланс</button><br>
+                    <label for="role">Роль:</label>
+                    <select id="role">
+                        <option value="client">Клиент</option>
+                        <option value="manager">Менеджер</option>
+                    </select><br>
+                    <input type="submit" value="Создать">
+                </form>
+            </div>
+            <div class="manager-form">
+                <h2>Редактирование пользователя</h2>
+                <form onsubmit="updateUser(); return false;">
+                    <label for="edit_user_id">ID пользователя:</label>
+                    <input type="text" id="edit_user_id" required><br>
+                    <label for="edit_name">Имя:</label>
+                    <input type="text" id="edit_name" required><br>
+                    <label for="edit_login">Логин:</label>
+                    <input type="text" id="edit_login" required><br>
+                    <label for="edit_password">Пароль:</label>
+                    <input type="password" id="edit_password" required><br>
+                    <label for="edit_phone">Телефон:</label>
+                    <input type="text" id="edit_phone"><br>
+                    <label for="edit_balance">Баланс:</label>
+                    <input type="number" id="edit_balance"><br>
+                    <input type="submit" value="Редактировать">
+                </form>
+            </div>
+            <div class="manager-form">
+                <h2>Удаление пользователя</h2>
+                <form onsubmit="deleteUser(); return false;">
+                    <label for="delete_user_id">ID пользователя:</label>
+                    <input type="text" id="delete_user_id" required><br>
+                    <input type="submit" value="Удалить">
+                </form>
+            </div>
+            <div class="manager-form">
+                <h2>Список пользователей</h2>
+                <table id="user_list">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Имя</th>
+                            <th>Логин</th>
+                            <th>Телефон</th>
+                            <th>Баланс</th>
+                            <th>Роль</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Список пользователей будет загружен динамически -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <a href="{{ url_for('logout') }}">Выход</a>
+    </div>
+    <footer>
+        ООО "Банк Оли". Лицензия №1234567890. Все права защищены.
+    </footer>
+    <!-- Скрипт для создания пользователя -->
+    <script>
+        function createUser() {
+            const name = document.getElementById('name').value;
+            const login = document.getElementById('login').value;
+            const password = document.getElementById('password').value;
+            const phone = document.getElementById('phone').value;
+            const balance = parseInt(document.getElementById('balance').value);
+            const role = document.getElementById('role').value;
+
+            fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'jsonrpc': '2.0',
+                    'method': 'create_user',
+                    'params': {
+                        'name': name,
+                        'login': login,
+                        'password': password,
+                        'phone': phone,
+                        'balance': balance,
+                        'role': role
+                    },
+                    'id': 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result) {
+                    alert('Пользователь создан успешно');
+                    loadUserList();
+                } else {
+                    alert('Ошибка при создании пользователя');
+                }
+            });
+        }
+
+        function updateUser() {
+            const userId = document.getElementById('edit_user_id').value;
+            const name = document.getElementById('edit_name').value;
+            const login = document.getElementById('edit_login').value;
+            const password = document.getElementById('edit_password').value;
+            const phone = document.getElementById('edit_phone').value;
+            const balance = parseInt(document.getElementById('edit_balance').value);
+
+            fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'jsonrpc': '2.0',
+                    'method': 'update_user',
+                    'params': {
+                        'user_id': parseInt(userId),
+                        'name': name,
+                        'login': login,
+                        'password': password,
+                        'phone': phone,
+                        'balance': balance
+                    },
+                    'id': 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result) {
+                    alert('Пользователь обновлен успешно');
+                    loadUserList();
+                } else {
+                    alert('Ошибка при обновлении пользователя');
+                }
+            });
+        }
+
+        function deleteUser() {
+            const userId = document.getElementById('delete_user_id').value;
+
+            fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'jsonrpc': '2.0',
+                    'method': 'delete_user',
+                    'params': {
+                        'user_id': parseInt(userId)
+                    },
+                    'id': 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result) {
+                    alert('Пользователь удален успешно');
+                    loadUserList();
+                } else {
+                    alert('Ошибка при удалении пользователя');
+                }
+            });
+        }
+
+        function loadUserList() {
+            fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'jsonrpc': '2.0',
+                    'method': 'get_users',
+                    'params': {},
+                    'id': 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const userList = data.result;
+                const tableBody = document.querySelector('#user_list tbody');
+                tableBody.innerHTML = '';
+
+                userList.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id}</td>
+                        <td>${user.name}</td>
+                        <td>${user.login}</td>
+                        <td>${user.phone}</td>
+                        <td>${user.balance}</td>
+                        <td>${user.role}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            });
+        }
+
+        function setFixedBalance() {
+            document.getElementById('balance').value = 5000;
+        }
+
+        // Загрузка списка пользователей при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadUserList);
+    </script>
+</body>
+</html>

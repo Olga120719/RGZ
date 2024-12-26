@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>История транзакций</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Банк Оли</h1>
+    </header>
+    <div class="container">
+        <div class="transactions-container">
+            <h2>История транзакций</h2>
+            <table class="transactions-table">
+                <thead>
+                    <tr>
+                        <th>Отправитель</th>
+                        <th>Получатель</th>
+                        <th>Сумма</th>
+                        <th>Дата</th>
+                    </tr>
+                </thead>
+                <tbody id="transactions-tbody">
+                    <!-- Список транзакций будет загружен динамически -->
+                </tbody>
+            </table>
+        </div>
+        <a href="{{ url_for('client') }}">Назад</a>
+    </div>
+    <footer>
+        ООО "Банк Оли". Лицензия №1234567890. Все права защищены.
+    </footer>
+    <script>
+        // Функция для форматирования даты и времени
+        function formatDateTime(dateTimeString) {
+            const dateTime = new Date(dateTimeString);
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric'
+            };
+            return dateTime.toLocaleString('ru-RU', options);
+        }
+
+        // Функция для загрузки списка транзакций
+        function loadTransactions() {
+            fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'jsonrpc': '2.0',
+                    'method': 'get_transactions',
+                    'params': {
+                        'user_id': {{ current_user.id }}
+                    },
+                    'id': 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const transactionsList = data.result;
+                const tableBody = document.getElementById('transactions-tbody');
+                tableBody.innerHTML = '';
+
+                transactionsList.forEach(transaction => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${transaction.sender}</td>
+                        <td>${transaction.recipient}</td>
+                        <td>${transaction.amount}</td>
+                        <td>${formatDateTime(transaction.timestamp)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            });
+        }
+
+        // Загрузка списка транзакций при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadTransactions);
+    </script>
+</body>
+</html>
